@@ -15,6 +15,11 @@ const routes = [
     // which is lazy-loaded when the route is visited.
     component: () =>
       import(/* webpackChunkName: "access-token" */ "../views/AccessToken.vue")
+  },
+  {
+    path: "/file-manager",
+    name: "FileManager",
+    component: () => import("../views/FileManager.vue")
   }
 ];
 
