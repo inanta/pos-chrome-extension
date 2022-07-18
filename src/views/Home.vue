@@ -41,7 +41,7 @@
           placeholder="Enter email"
           type="email"
         />
-        <small id="emailHelp" class="form-text text-muted"
+        <small id="emailHelp" class="block pt-1 text-gray-400 text-sm"
           >We'll never share your email with anyone else.</small
         >
       </div>

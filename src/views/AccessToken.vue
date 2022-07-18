@@ -35,13 +35,9 @@
           v-model="email"
           class="border border-gray-500 p-2 rounded-sm text-base w-full"
           disabled
-          aria-describedby="emailHelp"
           placeholder="Enter email"
           type="email"
         />
-        <small id="emailHelp" class="form-text text-muted"
-          >We'll never share your email with anyone else.</small
-        >
       </div>
       <div class="pb-2">
         <label class="block pb-1.5 text-base w-full" for="token"
