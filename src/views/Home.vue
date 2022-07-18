@@ -121,13 +121,10 @@ export default {
           };
 
           chrome.storage.sync.set(pos, () => {
-            // document.location.href = chrome.runtime.getURL("access_token.html");
             self.$router.push("/access-token");
           });
         })
         .catch(() => {
-          // document.querySelector("#submit").innerHTML = "Submit";
-          // document.querySelector("#submit").removeAttribute("disabled");
           self.isSubmitting = false;
         });
     }
