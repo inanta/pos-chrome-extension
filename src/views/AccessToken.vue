@@ -53,10 +53,17 @@
       </div>
       <button
         @click="forget"
-        class="bg-primary mt-2 px-5 py-3 rounded-sm text-base text-white"
+        class="bg-red-600 mt-2 px-5 py-3 rounded-sm text-base text-white"
         type="button"
       >
-        Forget Access Token
+        <i class="fa fa-times"></i> Forget Access Token
+      </button>
+      <button
+        @click="fileManager"
+        class="bg-primary ml-2 mt-2 px-5 py-3 rounded-sm text-base text-white"
+        type="button"
+      >
+        <i class="fa fa-files"></i> File Manager
       </button>
     </form>
   </div>
@@ -78,19 +85,20 @@ export default {
   mounted: function () {
     let self = this;
 
-    chrome.storage.sync.get("url", (data) => {
-      self.url = data.url;
-    });
+    if (typeof chrome.storage !== "undefined") {
+      chrome.storage.sync.get("url", (data) => {
+        self.url = data.url;
+      });
 
-    chrome.storage.sync.get("email", (data) => {
-      self.email = data.email;
-    });
+      chrome.storage.sync.get("email", (data) => {
+        self.email = data.email;
+      });
 
-    chrome.storage.sync.get("token", (data) => {
-      self.token = data.token;
-    });
+      chrome.storage.sync.get("token", (data) => {
+        self.token = data.token;
+      });
+    }
   },
-
   methods: {
     forget: function () {
       let self = this;
@@ -98,6 +106,9 @@ export default {
       chrome.storage.sync.remove("token", () => {
         self.$router.push("/");
       });
+    },
+    fileManager: function () {
+      this.$router.push("/file-manager");
     }
   }
 };
