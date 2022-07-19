@@ -14,7 +14,13 @@
         </div>
       </div>
       <div class="w-1/2">
-        <tree :depth="0" :label="files.label" :nodes="files.nodes"></tree>
+        <tree
+          v-for="(file, index) in files"
+          :depth="0"
+          :key="index"
+          :label="file.label"
+          :nodes="file.nodes"
+        ></tree>
       </div>
     </div>
   </div>
@@ -34,32 +40,35 @@ export default {
       env: "",
       email: "",
       token: "",
-      files: { nodes: [] }
+      // files: { nodes: [] }
+      files: []
     };
   },
   mounted: function () {},
-
   methods: {
     drop: function (event) {
       let self = this;
       let length = event.dataTransfer.items.length;
 
+      // self.files = { nodes: [] };
+      self.files.splice(0);
+
       for (let i = 0; i < length; i++) {
         let entry = event.dataTransfer.items[i].webkitGetAsEntry();
 
         if (entry.isFile) {
-          self.files.nodes.push({
+          self.files.push({
             label: entry.name,
             fullPath: entry.fullPath
           });
         } else if (entry.isDirectory) {
-          self.files.nodes.push({
+          self.files.push({
             label: entry.name,
             fullPath: entry.fullPath,
             nodes: []
           });
 
-          self.readDirectory(entry, self.files.nodes[i]);
+          self.readDirectory(entry, self.files[i]);
         }
       }
     },
