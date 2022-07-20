@@ -2,18 +2,24 @@
   <div class="container-fluid h-full">
     <div class="flex h-full">
       <div class="flex flex-col w-full">
-        <div class="pr-2 mt-1 text-right">
-          <button
-            @click="forget"
-            class="bg-red-600 mt-1 px-5 py-2 rounded text-base text-white"
-            type="button"
-          >
-            <i class="fa fa-times"></i> Forget Access Token
-          </button>
+        <div class="border-b border-tertiary flex w-full">
+          <div class="pl-2 pt-2 mt-1 text-xl w-1/2">
+            <img class="h-6 inline-block pr-2" src="@/assets/img/ooc.png" />
+            OOC POS Chrome Extension
+          </div>
+          <div class="pb-3 pr-2 mt-1 text-right w-1/2">
+            <button
+              @click="forget"
+              class="bg-red-600 mt-1 px-5 py-2 rounded text-base text-white"
+              type="button"
+            >
+              <i class="fa fa-times"></i> Forget Access Token
+            </button>
+          </div>
         </div>
         <div class="flex h-full">
           <div class="flex flex-col p-2 pr-1 text-base w-1/2">
-            <div>Local Site</div>
+            <div class="pb-1">Local Site</div>
             <div
               class="border border-tertiary h-full overflow-x-scroll rounded"
             >
@@ -21,7 +27,7 @@
             </div>
           </div>
           <div class="flex flex-col p-2 pl-1 text-base w-1/2">
-            <div>Remote Site</div>
+            <div class="pb-1">Remote Site</div>
             <div
               @drop.prevent="drop"
               @dragenter.prevent
