@@ -1,63 +1,50 @@
 <template>
   <div class="container-fluid h-full">
     <div class="flex h-full">
-      <div class="flex flex-col p-2 pr-1 text-base w-1/2">
-        <div>Local Site</div>
-        <div class="border border-tertiary h-full overflow-x-scroll rounded">
-          <file-browser></file-browser>
+      <div class="flex flex-col w-full">
+        <div class="pr-2 mt-1 text-right">
+          <button
+            @click="forget"
+            class="bg-red-600 mt-1 px-5 py-2 rounded text-base text-white"
+            type="button"
+          >
+            <i class="fa fa-times"></i> Forget Access Token
+          </button>
+        </div>
+        <div class="flex h-full">
+          <div class="flex flex-col p-2 pr-1 text-base w-1/2">
+            <div>Local Site</div>
+            <div
+              class="border border-tertiary h-full overflow-x-scroll rounded"
+            >
+              <file-browser></file-browser>
+            </div>
+          </div>
+          <div class="flex flex-col p-2 pl-1 text-base w-1/2">
+            <div>Remote Site</div>
+            <div
+              @drop.prevent="drop"
+              @dragenter.prevent
+              @dragover.prevent
+              class="border border-tertiary h-full overflow-x-scroll rounded"
+            >
+              <remote-file-browser></remote-file-browser>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="flex flex-col p-2 pl-1 text-base w-1/2">
-        <div>Remote Site</div>
-        <div
-          @drop.prevent="drop"
-          @dragenter.prevent
-          @dragover.prevent
-          class="border border-tertiary h-full overflow-x-scroll rounded"
-        >
-          <remote-file-browser></remote-file-browser>
-          <!-- <tree
-            v-for="(file, index) in remoteFiles"
-            :depth="0"
-            :key="index"
-            :label="file.label"
-            :nodes="file.nodes"
-          ></tree> -->
-        </div>
-        <!-- <tree
-          v-for="(file, index) in files"
-          :depth="0"
-          :key="index"
-          :label="file.label"
-          :nodes="file.nodes"
-        ></tree>
-        <div
-          @drop.prevent="drop"
-          @dragenter.prevent
-          @dragover.prevent
-          class="border border-tertiary h-full rounded"
-        >
-          Drop Files or Folders Here
-        </div> -->
-      </div>
-      <!-- <div class="w-1/2">
-        <tree
-          v-for="(file, index) in files"
-          :depth="0"
-          :key="index"
-          :label="file.label"
-          :nodes="file.nodes"
-        ></tree>
-      </div> -->
     </div>
   </div>
   <div
     v-if="showQueuedFiles"
-    class="absolute bg-white h-3/4 flex flex-col left-1/4 rounded shadow top-[10%] w-1/2"
+    class="animate__animated animate__slideInUp animate__faster absolute bg-white h-3/4 flex flex-col left-1/4 rounded shadow top-[10%] w-1/2"
   >
-    <div class="bg-primary px-3 py-2 rounded text-white">
-      Queued Files
-      <i class="fas fa-times cursor-pointer float-right"></i>
+    <div class="bg-primary px-3 py-2 rounded text-lg text-white">
+      Queued Files ({{ totalFiles }})
+      <i
+        @click="showQueuedFiles = false"
+        class="fas fa-times cursor-pointer float-right pt-1"
+      ></i>
     </div>
     <div class="overflow-x-scroll p-3">
       <tree
@@ -72,6 +59,8 @@
 </template>
 
 <script>
+/* global chrome */
+
 import FileBrowser from "@/components/FileBrowser.vue";
 import RemoteFileBrowser from "@/components/RemoteFileBrowser.vue";
 import Tree from "@/components/Tree.vue";
@@ -86,16 +75,25 @@ export default {
   data: function () {
     return {
       files: [],
+      totalFiles: 0,
       remoteFiles: [],
       showQueuedFiles: false
     };
   },
   mounted: function () {},
   methods: {
+    forget: function () {
+      let self = this;
+
+      chrome.storage.sync.remove("token", () => {
+        self.$router.push("/");
+      });
+    },
     drop: function (event) {
       let self = this;
       let length = event.dataTransfer.items.length;
 
+      self.totalFiles = 0;
       self.showQueuedFiles = true;
       self.files.splice(0);
 
@@ -107,6 +105,8 @@ export default {
             label: entry.name,
             entry: entry
           });
+
+          self.totalFiles++;
         } else if (entry.isDirectory) {
           self.files.push({
             label: entry.name,
@@ -146,6 +146,8 @@ export default {
 
           if (entry.isDirectory) {
             self.readDirectory(entry, files["nodes"][files.nodes.length - 1]);
+          } else {
+            self.totalFiles++;
           }
         }
       });
