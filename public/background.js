@@ -6,7 +6,7 @@ chrome.action.onClicked.addListener(function () {
   chrome.storage.sync.get("token", (data) => {
     console.log("token", data.token);
     if (typeof data.token !== "undefined") {
-      url += "#/access-token";
+      url += "#/file-manager";
     }
 
     chrome.tabs.create({ url: chrome.runtime.getURL(url) });
