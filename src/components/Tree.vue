@@ -1,6 +1,6 @@
 <template>
   <div class="tree-menu">
-    <div :style="indent">&bull; {{ label }}</div>
+    <div class="text-base" :style="indent">&bull; {{ label }}</div>
     <tree
       v-for="node in nodes"
       :depth="depth + 1"
