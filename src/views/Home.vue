@@ -121,7 +121,7 @@ export default {
           };
 
           chrome.storage.sync.set(pos, () => {
-            self.$router.push("/access-token");
+            self.$router.push("/file-manager");
           });
         })
         .catch(() => {
