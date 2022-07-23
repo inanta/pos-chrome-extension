@@ -25,7 +25,7 @@
     <file-browser-file-item
       v-if="entry.kind === 'file'"
       @entry-click="entryClick"
-      @entry-double-click="entryDoubleClick"
+      @entry-double-click="entryDoubleClick(entry)"
       :draggable="true"
       :name="entry.name"
       :selected="entry.isSelected"
@@ -43,6 +43,7 @@ export default {
     FileBrowserFileItem
   },
   name: "FileBrowser",
+  emits: ["fileExecute", "directoryChange"],
   data: function () {
     return {
       currentDirectoryEntry: null,
@@ -86,28 +87,11 @@ export default {
         directory.isUpDirectory = false;
       }
 
-      if (self.directoryEntryHistories.length > 0) {
-        if (
-          directory.isUpDirectory &&
-          self.directoryEntryHistories.length > 1
-        ) {
-          self.directoryEntryHistories.pop();
-        }
-
-        if (!directory.isRootDirectory) {
-          self.entries.push({
-            kind: "directory",
-            name: "..",
-            isSelected: false,
-            entry:
-              self.directoryEntryHistories[
-                self.directoryEntryHistories.length - 1
-              ]
-          });
-        }
+      if (directory.isUpDirectory) {
+        self.directoryEntryHistories.pop(directory);
+      } else {
+        self.directoryEntryHistories.push(directory);
       }
-
-      let file_count = 0;
 
       for await (let entry of directory.values()) {
         // Skip files / directories that start with "." (dot)
@@ -121,16 +105,22 @@ export default {
           isSelected: false,
           entry: entry
         });
-
-        file_count++;
       }
 
-      if (!directory.isUpDirectory && file_count > 0) {
-        if (self.directoryEntryHistories.length > 0) {
-          directory.isUpDirectory = true;
-        }
+      if (self.directoryEntryHistories.length > 1) {
+        self.directoryEntryHistories[
+          self.directoryEntryHistories.length - 2
+        ].isUpDirectory = true;
 
-        self.directoryEntryHistories.push(directory);
+        self.entries.unshift({
+          kind: "directory",
+          name: "..",
+          isSelected: false,
+          entry:
+            self.directoryEntryHistories[
+              self.directoryEntryHistories.length - 2
+            ]
+        });
       }
 
       console.log("HISTORY", self.directoryEntryHistories);
@@ -162,8 +152,7 @@ export default {
         }
       }
     },
-    entryDoubleClick: function (clicked_entry) {
-      console.log(clicked_entry);
+      this.$emit("fileExecute", entry);
     },
     entryDrag: function (entry) {
       console.log("ENTRY", entry);
