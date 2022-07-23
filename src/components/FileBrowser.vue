@@ -19,7 +19,7 @@
       @entry-click="entryClick"
       @entry-double-click="directoryClick(entry)"
       :draggable="true"
-      :name="directoryName(entry)"
+      :name="entry.name"
       :selected="entry.isSelected"
     ></file-browser-directory-item>
     <file-browser-file-item
@@ -130,13 +130,6 @@ export default {
 
       self.showEntries(entry.entry);
     },
-    directoryName: function (entry) {
-      if (typeof entry.isUpDirectory === "undefined") {
-        return entry.name;
-      }
-
-      return "..";
-    },
     entryClick: function (clicked_entry, shiftKey) {
       let self = this;
 
@@ -152,6 +145,7 @@ export default {
         }
       }
     },
+    entryDoubleClick: function (entry) {
       this.$emit("fileExecute", entry);
     },
     entryDrag: function (entry) {
