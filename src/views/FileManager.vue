@@ -19,11 +19,14 @@
         </div>
         <div class="flex h-full">
           <div class="flex flex-col p-2 pr-1 text-base w-1/2">
-            <div class="pb-1">Local Site</div>
+            <div class="pb-1">Local Site: {{ FileBrowserPath }}</div>
             <div
               class="border border-tertiary h-full overflow-x-scroll rounded"
             >
-              <file-browser></file-browser>
+              <file-browser
+                @file-execute="localFileUpload"
+                @directory-change="changeFileBrowserPath"
+              ></file-browser>
             </div>
           </div>
           <div class="flex flex-col p-2 pl-1 text-base w-1/2">
@@ -82,6 +85,7 @@ export default {
     return {
       files: [],
       totalFiles: 0,
+      FileBrowserPath: "(Not Selected)",
       remoteFiles: [],
       showQueuedFiles: false
     };
@@ -162,6 +166,21 @@ export default {
     },
     endReadDirectory: function () {
       console.log(this.files);
+    },
+    localFileUpload: function (entry) {
+      let self = this;
+
+      self.files.splice(0);
+      self.totalFiles = 1;
+      self.showQueuedFiles = true;
+
+      self.files.push({
+        label: entry.name,
+        entry: entry
+      });
+    },
+    changeFileBrowserPath: function (path) {
+      this.FileBrowserPath = path;
     }
   }
 };

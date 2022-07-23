@@ -46,9 +46,9 @@ export default {
   emits: ["fileExecute", "directoryChange"],
   data: function () {
     return {
-      currentDirectoryEntry: null,
       directoryEntryHistories: [],
-      entries: []
+      entries: [],
+      path: ""
     };
   },
   mounted: function () {},
@@ -76,7 +76,6 @@ export default {
     showEntries: async function (directory) {
       let self = this;
 
-      self.currentDirectoryEntry = directory;
       self.entries.splice(0);
 
       if (typeof directory.isRootDirectory === "undefined") {
@@ -123,7 +122,19 @@ export default {
         });
       }
 
-      console.log("HISTORY", self.directoryEntryHistories);
+      self.path = "";
+
+      for (
+        let index = 0;
+        index < self.directoryEntryHistories.length;
+        index++
+      ) {
+        let entry = self.directoryEntryHistories[index];
+
+        self.path += "\\" + entry.name;
+      }
+
+      self.$emit("directoryChange", self.path);
     },
     directoryClick(entry) {
       let self = this;
