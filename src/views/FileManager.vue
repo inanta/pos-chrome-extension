@@ -99,6 +99,8 @@ export default {
       let self = this;
       let length = event.dataTransfer.items.length;
 
+      console.log("DROPPED", event);
+
       self.totalFiles = 0;
       self.showQueuedFiles = true;
       self.files.splice(0);
@@ -160,31 +162,6 @@ export default {
     },
     endReadDirectory: function () {
       console.log(this.files);
-    },
-    eachRecursive: function (obj, remoteFiles) {
-      let self = this;
-
-      for (var k in obj) {
-        if (typeof obj[k] == "object" && obj[k] !== null) {
-          remoteFiles.push({ label: k });
-
-          if (
-            typeof remoteFiles[remoteFiles.length - 1].nodes === "undefined"
-          ) {
-            remoteFiles[remoteFiles.length - 1].nodes = [];
-          }
-
-          self.eachRecursive(
-            obj[k],
-            remoteFiles[remoteFiles.length - 1]["nodes"]
-          );
-        }
-        // else {
-        //   console.log("NOT OBJECT", obj[k]);
-        // }
-      }
-
-      console.log("RMEOTE", self.remoteFiles);
     }
   }
 };

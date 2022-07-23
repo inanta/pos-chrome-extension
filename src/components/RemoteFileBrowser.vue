@@ -15,12 +15,15 @@
   <template v-for="entry in entries" :key="entry.name">
     <file-browser-directory-item
       v-if="entry.kind === 'directory'"
-      @request-entries="showDirectoryEntries(entry)"
+      @entry-click="entryClick"
+      @entry-double-click="directoryClick(entry)"
       :name="directoryName(entry)"
+      :selected="entry.isSelected"
     ></file-browser-directory-item>
     <file-browser-file-item
       v-if="entry.kind === 'file'"
       :name="entry.name"
+      :selected="entry.isSelected"
     ></file-browser-file-item>
   </template>
 </template>
@@ -35,7 +38,7 @@ export default {
     FileBrowserFileItem
   },
   name: "RemoteFileBrowser",
-  data() {
+  data: function () {
     return {
       remoteFiles: { nodes: [], isRootDirectory: true, isUpDirectory: true },
       currentDirectoryTree: [],
@@ -59,7 +62,7 @@ export default {
         return response.json();
       })
       .then((data) => {
-        self.groupRemoteFileNodes(data.tree, 0, self.remoteFiles["nodes"]);
+        self.organizeRemoteFileNodes(data.tree, 0, self.remoteFiles["nodes"]);
       })
       .catch(() => {});
   },
@@ -69,7 +72,7 @@ export default {
     }
   },
   methods: {
-    groupRemoteFileNodes: function (obj, depth, remoteFiles) {
+    organizeRemoteFileNodes: function (obj, depth, remoteFiles) {
       let self = this;
 
       for (var k in obj) {
@@ -82,7 +85,7 @@ export default {
             remoteFiles[remoteFiles.length - 1].nodes = [];
           }
 
-          self.groupRemoteFileNodes(
+          self.organizeRemoteFileNodes(
             obj[k],
             depth + 1,
             remoteFiles[remoteFiles.length - 1]["nodes"]
@@ -146,6 +149,7 @@ export default {
         self.entries.push({
           name: file.label,
           kind: "directory",
+          isSelected: false,
           file: file
         });
         file_count++;
@@ -161,10 +165,8 @@ export default {
 
       console.log("HISTORY", self.directoryEntryHistories);
     },
-    showDirectoryEntries(entry) {
+    directoryClick(entry) {
       let self = this;
-
-      console.log("ENTRY CLICK", entry);
 
       self.showEntries(entry);
     },
@@ -174,6 +176,21 @@ export default {
       }
 
       return "..";
+    },
+    entryClick: function (clicked_entry, shiftKey) {
+      let self = this;
+
+      for (let index = 0; index < self.entries.length; index++) {
+        let entry = self.entries[index];
+
+        if (entry.name === clicked_entry) {
+          entry.isSelected = true;
+        } else {
+          if (!shiftKey) {
+            entry.isSelected = false;
+          }
+        }
+      }
     }
   }
 };

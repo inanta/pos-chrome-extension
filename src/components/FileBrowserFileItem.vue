@@ -1,14 +1,47 @@
 <template>
-  <div class="cursor-pointer px-2 text-lg">
-    <i :class="icon" class="fas"></i> {{ name }}
+  <div
+    @click="entryClick"
+    @dblclick="entryDoubleClick"
+    :class="{ 'bg-primary': isSelected, 'text-white': isSelected }"
+    :draggable="draggable"
+    class="cursor-pointer px-2 select-none text-lg"
+  >
+    <i :class="icon" class="fas"></i> {{ internalName }}
   </div>
 </template>
 
 <script>
 export default {
   name: "FileBrowseFileItem",
+  emits: [
+    // "entryDrag",
+    "entryClick",
+    "entryDoubleClick"
+  ],
   props: {
-    name: String
+    draggable: Boolean,
+    name: String,
+    selected: Boolean
+  },
+  data: function () {
+    return {
+      internalName: "",
+      isSelected: false
+    };
+  },
+  watch: {
+    name: {
+      handler: function (value) {
+        this.internalName = value;
+      },
+      immediate: true
+    },
+    selected: {
+      handler: function (value) {
+        this.isSelected = value;
+      },
+      immediate: true
+    }
   },
   computed: {
     icon: function () {
@@ -26,6 +59,17 @@ export default {
 
       return "fa-file-alt";
     }
+  },
+  methods: {
+    entryClick: function (event) {
+      this.$emit("entryClick", this.internalName, event.shiftKey);
+    },
+    entryDoubleClick: function () {
+      this.$emit("entryDoubleClick", this.internalName);
+    }
+    // handleDragStart: function () {
+    //   this.$emit("entryDrag", this.entry);
+    // }
   }
 };
 </script>

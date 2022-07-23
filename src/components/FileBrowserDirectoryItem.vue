@@ -1,15 +1,51 @@
 <template>
-  <div @click="$emit('requestEntries')" class="cursor-pointer px-2 text-lg">
-    <i class="fas fa-folder"></i> {{ name }}
+  <div
+    @click="entryClick"
+    @dblclick="entryDoubleClick"
+    :class="{ 'bg-primary': isSelected, 'text-white': isSelected }"
+    :draggable="draggable"
+    class="cursor-pointer px-2 select-none text-lg"
+  >
+    <i class="fas fa-folder"></i> {{ internalName }}
   </div>
 </template>
 
 <script>
 export default {
   name: "FileBrowseDirectoryItem",
-  emits: ["requestEntries"],
+  emits: ["entryClick", "entryDoubleClick"],
   props: {
-    name: String
+    draggable: Boolean,
+    name: String,
+    selected: Boolean
+  },
+  data: function () {
+    return {
+      internalName: "",
+      isSelected: false
+    };
+  },
+  watch: {
+    name: {
+      handler: function (value) {
+        this.internalName = value;
+      },
+      immediate: true
+    },
+    selected: {
+      handler: function (value) {
+        this.isSelected = value;
+      },
+      immediate: true
+    }
+  },
+  methods: {
+    entryClick: function (event) {
+      this.$emit("entryClick", this.internalName, event.shiftKey);
+    },
+    entryDoubleClick: function () {
+      this.$emit("entryDoubleClick", this.internalName);
+    }
   }
 };
 </script>

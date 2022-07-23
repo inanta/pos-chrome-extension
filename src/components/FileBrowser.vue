@@ -16,12 +16,19 @@
   <template v-for="entry in entries" :key="entry.name">
     <file-browser-directory-item
       v-if="entry.kind === 'directory'"
-      @request-entries="showDirectoryEntries(entry)"
+      @entry-click="entryClick"
+      @entry-double-click="directoryClick(entry)"
+      :draggable="true"
       :name="directoryName(entry)"
+      :selected="entry.isSelected"
     ></file-browser-directory-item>
     <file-browser-file-item
       v-if="entry.kind === 'file'"
+      @entry-click="entryClick"
+      @entry-double-click="entryDoubleClick"
+      :draggable="true"
       :name="entry.name"
+      :selected="entry.isSelected"
     ></file-browser-file-item>
   </template>
 </template>
@@ -36,7 +43,7 @@ export default {
     FileBrowserFileItem
   },
   name: "FileBrowser",
-  data() {
+  data: function () {
     return {
       currentDirectoryEntry: null,
       directoryEntryHistories: [],
@@ -88,23 +95,33 @@ export default {
         }
 
         if (!directory.isRootDirectory) {
-          self.entries.push(
-            self.directoryEntryHistories[
-              self.directoryEntryHistories.length - 1
-            ]
-          );
+          self.entries.push({
+            kind: "directory",
+            name: "..",
+            isSelected: false,
+            entry:
+              self.directoryEntryHistories[
+                self.directoryEntryHistories.length - 1
+              ]
+          });
         }
       }
 
       let file_count = 0;
 
-      for await (const entry of directory.values()) {
+      for await (let entry of directory.values()) {
         // Skip files / directories that start with "." (dot)
         if (entry.name.charAt(0) === ".") {
           continue;
         }
 
-        self.entries.push(entry);
+        self.entries.push({
+          kind: entry.kind,
+          name: entry.name,
+          isSelected: false,
+          entry: entry
+        });
+
         file_count++;
       }
 
@@ -118,12 +135,10 @@ export default {
 
       console.log("HISTORY", self.directoryEntryHistories);
     },
-    showDirectoryEntries(entry) {
+    directoryClick(entry) {
       let self = this;
 
-      console.log(entry);
-
-      self.showEntries(entry);
+      self.showEntries(entry.entry);
     },
     directoryName: function (entry) {
       if (typeof entry.isUpDirectory === "undefined") {
@@ -131,6 +146,27 @@ export default {
       }
 
       return "..";
+    },
+    entryClick: function (clicked_entry, shiftKey) {
+      let self = this;
+
+      for (let index = 0; index < self.entries.length; index++) {
+        let entry = self.entries[index];
+
+        if (entry.name === clicked_entry) {
+          entry.isSelected = true;
+        } else {
+          if (!shiftKey) {
+            entry.isSelected = false;
+          }
+        }
+      }
+    },
+    entryDoubleClick: function (clicked_entry) {
+      console.log(clicked_entry);
+    },
+    entryDrag: function (entry) {
+      console.log("ENTRY", entry);
     }
   }
 };
