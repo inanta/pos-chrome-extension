@@ -38,13 +38,15 @@ export default {
     FileBrowserFileItem
   },
   name: "RemoteFileBrowser",
+  emits: ["fileExecute", "directoryChange"],
   data: function () {
     return {
       remoteFiles: { nodes: [], isRootDirectory: true, isUpDirectory: true },
       currentDirectoryTree: [],
       // currentDirectoryEntry: null,
       directoryEntryHistories: [],
-      entries: []
+      entries: [],
+      path: ""
     };
   },
   mounted: function () {
@@ -104,11 +106,12 @@ export default {
       let self = this;
       let directory = self.remoteFiles;
 
-      directory.name = "/";
+      directory.name = "";
       directory.kind = "directory";
       directory.file = self.remoteFiles;
+      directory.isRootDirectory = true;
+      directory.isUpDirectory = false;
 
-      self.directoryEntryHistories.push(directory);
       self.showEntries(directory);
     },
     showEntries: function (directory) {
@@ -124,46 +127,64 @@ export default {
         directory.isUpDirectory = false;
       }
 
-      if (self.directoryEntryHistories.length > 0) {
-        if (
-          directory.isUpDirectory &&
-          self.directoryEntryHistories.length > 1
-        ) {
-          self.directoryEntryHistories.pop();
-        }
-
-        if (!directory.isRootDirectory) {
-          self.entries.push(
-            self.directoryEntryHistories[
-              self.directoryEntryHistories.length - 1
-            ]
-          );
-        }
+      if (directory.isUpDirectory) {
+        self.directoryEntryHistories.pop(directory);
+      } else {
+        self.directoryEntryHistories.push(directory);
       }
-
-      let file_count = 0;
 
       for (let index = 0; index < directory.file.nodes.length; index++) {
         let file = directory.file.nodes[index];
 
         self.entries.push({
-          name: file.label,
           kind: "directory",
+          name: file.label,
           isSelected: false,
           file: file
         });
-        file_count++;
       }
 
-      if (!directory.isUpDirectory && file_count > 0) {
-        if (self.directoryEntryHistories.length > 0) {
-          directory.isUpDirectory = true;
+      if (self.directoryEntryHistories.length > 1) {
+        self.directoryEntryHistories[
+          self.directoryEntryHistories.length - 2
+        ].file.isUpDirectory = true;
+
+        self.entries.unshift({
+          kind: "directory",
+          name: "..",
+          isSelected: false,
+          file: self.directoryEntryHistories[
+            self.directoryEntryHistories.length - 2
+          ].file,
+
+          isUpDirectory:
+            self.directoryEntryHistories[
+              self.directoryEntryHistories.length - 2
+            ].file.isUpDirectory
+        });
+      }
+
+      self.path = "";
+
+      for (
+        let index = 0;
+        index < self.directoryEntryHistories.length;
+        index++
+      ) {
+        let entry = self.directoryEntryHistories[index];
+
+        if (entry.name == "") {
+          continue;
         }
 
-        self.directoryEntryHistories.push(directory);
+        self.path += "/" + entry.name;
       }
 
-      console.log("HISTORY", self.directoryEntryHistories);
+      if (self.path === "") {
+        self.path = "/";
+      }
+
+      self.$emit("directoryChange", self.path);
     },
     directoryClick(entry) {
       let self = this;

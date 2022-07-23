@@ -19,7 +19,7 @@
         </div>
         <div class="flex h-full">
           <div class="flex flex-col p-2 pr-1 text-base w-1/2">
-            <div class="pb-1">Local Site: {{ FileBrowserPath }}</div>
+            <div class="pb-1">Local Site: {{ fileBrowserPath }}</div>
             <div
               class="border border-tertiary h-full overflow-x-scroll rounded"
             >
@@ -30,14 +30,16 @@
             </div>
           </div>
           <div class="flex flex-col p-2 pl-1 text-base w-1/2">
-            <div class="pb-1">Remote Site</div>
+            <div class="pb-1">Remote Site: {{ remoteFileBrowserPath }}</div>
             <div
               @drop.prevent="drop"
               @dragenter.prevent
               @dragover.prevent
               class="border border-tertiary h-full overflow-x-scroll rounded"
             >
-              <remote-file-browser></remote-file-browser>
+              <remote-file-browser
+                @directory-change="changeRemoteFileBrowserPath"
+              ></remote-file-browser>
             </div>
           </div>
         </div>
@@ -85,8 +87,9 @@ export default {
     return {
       files: [],
       totalFiles: 0,
-      FileBrowserPath: "(Not Selected)",
+      fileBrowserPath: "(Not Selected)",
       remoteFiles: [],
+      remoteFileBrowserPath: "",
       showQueuedFiles: false
     };
   },
@@ -180,7 +183,10 @@ export default {
       });
     },
     changeFileBrowserPath: function (path) {
-      this.FileBrowserPath = path;
+      this.fileBrowserPath = path;
+    },
+    changeRemoteFileBrowserPath: function (path) {
+      this.remoteFileBrowserPath = path;
     }
   }
 };

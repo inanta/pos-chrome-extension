@@ -131,7 +131,7 @@ export default {
       ) {
         let entry = self.directoryEntryHistories[index];
 
-        self.path += "\\" + entry.name;
+        self.path += "/" + entry.name;
       }
 
       self.$emit("directoryChange", self.path);
