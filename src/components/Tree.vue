@@ -1,15 +1,16 @@
 <template>
-  <div class="tree-menu">
-    <div class="text-base" :style="indent">&bull; {{ label }}</div>
-
-    <tree
-      v-for="node in nodes"
-      :depth="depth + 1"
-      :key="node.fullPath"
-      :label="node.label"
-      :nodes="node.nodes"
-    ></tree>
-  </div>
+  <ul class="tree-menu">
+    <li class="text-base" :style="indent">&bull; {{ label }}</li>
+    <li>
+      <tree
+        v-for="node in nodes"
+        :depth="depth + 1"
+        :key="node.fullPath"
+        :label="node.label"
+        :nodes="node.nodes"
+      ></tree>
+    </li>
+  </ul>
 </template>
 
 <script>
