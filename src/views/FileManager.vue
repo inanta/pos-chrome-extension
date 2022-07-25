@@ -64,7 +64,8 @@
         :key="index"
         :label="file.label"
         :nodes="file.nodes"
-      ></tree>
+      >
+      </tree>
     </div>
   </div>
 </template>
@@ -75,6 +76,7 @@
 import FileBrowser from "@/components/FileBrowser.vue";
 import RemoteFileBrowser from "@/components/RemoteFileBrowser.vue";
 import Tree from "@/components/Tree.vue";
+import allowedFileExtension from "@/assets/js/allowedFileExtensions.js";
 
 export default {
   name: "FileManager",
@@ -85,15 +87,36 @@ export default {
   },
   data: function () {
     return {
+      url: "https://sydneycommercialkitchens.staging.oregon.platform-os.com",
+      env: "",
+      email: "inanta+2021@easywebsitemanager.com.au",
+      token: "rk63vDWDL7jCb8gt3WcDXZ7Cx_690LqbJnOjK3nqJuQ",
+
       files: [],
       totalFiles: 0,
       fileBrowserPath: "(Not Selected)",
       remoteFiles: [],
-      remoteFileBrowserPath: "",
+      remoteFileBrowserPath: "(Not Connected)",
       showQueuedFiles: false
     };
   },
-  mounted: function () {},
+  mounted: function () {
+    let self = this;
+
+    if (typeof chrome.storage !== "undefined") {
+      chrome.storage.sync.get("url", (data) => {
+        self.url = data.url;
+      });
+
+      chrome.storage.sync.get("email", (data) => {
+        self.email = data.email;
+      });
+
+      chrome.storage.sync.get("token", (data) => {
+        self.token = data.token;
+      });
+    }
+  },
   methods: {
     forget: function () {
       let self = this;
@@ -117,8 +140,9 @@ export default {
 
         if (entry.isFile) {
           self.files.push({
+            entry: entry,
             label: entry.name,
-            entry: entry
+            status: "pending"
           });
 
           self.totalFiles++;
@@ -155,8 +179,9 @@ export default {
           }
 
           files.nodes.push({
+            entry: entry,
             label: entry.name,
-            entry: entry
+            status: "pending"
           });
 
           if (entry.isDirectory) {
@@ -177,6 +202,8 @@ export default {
       self.totalFiles = 1;
       self.showQueuedFiles = true;
 
+      self.prepareUpload(entry.entry);
+
       self.files.push({
         label: entry.name,
         entry: entry
@@ -187,6 +214,59 @@ export default {
     },
     changeRemoteFileBrowserPath: function (path) {
       this.remoteFileBrowserPath = path;
+    },
+    prepareUpload: async function (file_handle) {
+      let self = this;
+
+      let file = await file_handle.getFile();
+      let contents = await file.text();
+
+      let path = self.remoteFileBrowserPath.substr(1);
+      let file_ext = file.name.split(".").pop();
+
+      if (!allowedFileExtension.includes(file_ext)) {
+        alert("File extensions is not allowed!");
+      } else {
+        self.upload(path + "/" + file.name, contents);
+      }
+    },
+    upload: function (path, contents) {
+      let self = this;
+
+      const data = {
+        path: path,
+        marketplace_builder_file_body: contents
+      };
+
+      fetch(self.url + "/api/app_builder/marketplace_releases/sync", {
+        method: "PUT",
+        headers: {
+          Authorization: "Token " + self.token,
+          InstanceDomain: self.url,
+          "User-Agent": "pos-cli/4.5.18",
+          From: self.email,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      })
+        .then((response) => {
+          if (response.status == 401) {
+            console.log(
+              "Unauthorized, plese check your email and / or password!"
+            );
+
+            throw new Error(
+              "Unauthorized, plese check your email and / or password!"
+            );
+          }
+
+          return response.json();
+        })
+        .then((data) => {
+          console.log("Uploaded!");
+          console.log(data);
+        })
+        .catch(() => {});
     }
   }
 };
