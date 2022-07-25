@@ -1,6 +1,7 @@
 <template>
   <div class="tree-menu">
     <div class="text-base" :style="indent">&bull; {{ label }}</div>
+
     <tree
       v-for="node in nodes"
       :depth="depth + 1"
@@ -22,6 +23,15 @@ export default {
   computed: {
     indent: function () {
       return { transform: `translate(${this.depth * 20}px)` };
+    }
+  },
+  methods: {
+    hasNodes: function () {
+      if (typeof this.nodes !== "undefined" && this.nodes.length > 0) {
+        return true;
+      }
+
+      return false;
     }
   }
 };
