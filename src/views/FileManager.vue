@@ -60,11 +60,13 @@
     <div class="overflow-x-scroll p-3">
       <tree
         v-for="(file, index) in queuedFiles"
+        :asset="file.isAsset"
         :depth="0"
         :key="index"
         :kind="file.kind"
         :label="file.label"
         :nodes="file.nodes"
+        :path="file.fullPath"
         :status="file.status"
       >
       </tree>
@@ -146,6 +148,8 @@ export default {
         if (entry.isFile) {
           self.queuedFiles.push({
             entry: entry,
+            fullPath: entry.fullPath,
+            isAsset: "",
             kind: "file",
             label: entry.name,
             status: "pending"
@@ -177,10 +181,6 @@ export default {
       let directoryReader = directory_entry.createReader();
 
       directoryReader.readEntries(function (results) {
-        // if (results.length === 0) {
-        //   self.endReadDirectory();
-        // }
-
         for (let index = 0; index < results.length; index++) {
           const entry = results[index];
 
@@ -195,6 +195,8 @@ export default {
 
           files.nodes.push({
             entry: entry,
+            fullPath: entry.fullPath,
+            isAsset: "",
             kind: entry.isFile ? "file" : entry.isDirectory ? "directory" : "",
             label: entry.name,
             status: "pending"
@@ -216,9 +218,7 @@ export default {
     },
     endReadDirectory: function () {
       let self = this;
-      // console.log(this.flattenQueuedFiles);
-      // if (!this.isSyncing) {
-      // }
+
       this.processQueue(self.queuedFiles);
     },
     processQueue: function (files) {
@@ -245,6 +245,8 @@ export default {
 
       self.queuedFiles.push({
         entry: entry.entry,
+        fullPath: "/",
+        isAsset: "",
         kind: "file",
         label: entry.name,
         status: "pending"
@@ -260,9 +262,20 @@ export default {
     },
     prepareUpload: async function (file_handle) {
       let self = this;
+      let slugify = require("slugify");
+      let path = self.remoteFileBrowserPath.substr(1);
       let file = "";
 
       if (typeof file_handle.entry.file !== "undefined") {
+        let path_split = file_handle.entry.fullPath.split("/");
+
+        path_split.shift();
+        path_split.pop();
+
+        for (let index = 0; index < path_split.length; index++) {
+          path += "/" + slugify(path_split[index], { lower: true });
+        }
+
         file = await self.getFileFromFileEntry(file_handle.entry);
       } else if (typeof file_handle.entry.getFile !== "undefined") {
         file = await file_handle.entry.getFile();
@@ -270,13 +283,16 @@ export default {
         return;
       }
 
-      let path = self.remoteFileBrowserPath.substr(1);
       let file_ext = file.name.split(".").pop();
 
       if (!allowedFileExtension.includes(file_ext)) {
         file_handle.status = "skip";
       } else {
-        self.upload(path + "/" + file.name, file, file_handle);
+        self.upload(
+          path + "/" + slugify(file.name, { lower: true }),
+          file,
+          file_handle
+        );
       }
     },
     getFileFromFileEntry: async function (fileEntry) {
@@ -296,6 +312,10 @@ export default {
       form_data.append("marketplace_builder_file_body", contents);
 
       entry.status = "syncing";
+
+      if (path.includes("/assets/")) {
+        entry.isAsset = path.replace("/public/assets", "");
+      }
 
       fetch(self.url + "/api/app_builder/marketplace_releases/sync", {
         method: "PUT",
