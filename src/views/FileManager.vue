@@ -136,8 +136,6 @@ export default {
       let self = this;
       let length = event.dataTransfer.items.length;
 
-      console.log("DROPPED", event);
-
       self.totalQueuedFiles = 0;
       self.showQueuedFiles = true;
       self.queuedFiles.splice(0);
@@ -171,8 +169,6 @@ export default {
           self.readDirectory(entry, self.queuedFiles[i]);
         }
       }
-
-      console.log("ENDFOR");
 
       self.processQueue(self.queuedFiles);
     },
