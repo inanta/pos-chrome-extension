@@ -51,7 +51,7 @@
     class="animate__animated animate__slideInUp animate__faster absolute bg-white h-3/4 flex flex-col left-1/4 rounded shadow top-[10%] w-1/2"
   >
     <div class="bg-primary px-3 py-2 rounded text-lg text-white">
-      Queued Files ({{ totalFiles }})
+      Queued Files ({{ totalQueuedFiles }})
       <i
         @click="showQueuedFiles = false"
         class="fas fa-times cursor-pointer float-right pt-1"
@@ -59,11 +59,13 @@
     </div>
     <div class="overflow-x-scroll p-3">
       <tree
-        v-for="(file, index) in files"
+        v-for="(file, index) in queuedFiles"
         :depth="0"
         :key="index"
+        :kind="file.kind"
         :label="file.label"
         :nodes="file.nodes"
+        :status="file.status"
       >
       </tree>
     </div>
@@ -92,12 +94,15 @@ export default {
       email: "inanta+2021@easywebsitemanager.com.au",
       token: "rk63vDWDL7jCb8gt3WcDXZ7Cx_690LqbJnOjK3nqJuQ",
 
-      files: [],
-      totalFiles: 0,
+      queuedFiles: [],
+      flattenQueuedFiles: [],
+      totalQueuedFiles: 0,
+      showQueuedFiles: false,
+      isSyncing: false,
+
       fileBrowserPath: "(Not Selected)",
       remoteFiles: [],
-      remoteFileBrowserPath: "(Not Connected)",
-      showQueuedFiles: false
+      remoteFileBrowserPath: "(Not Connected)"
     };
   },
   mounted: function () {
@@ -131,40 +136,50 @@ export default {
 
       console.log("DROPPED", event);
 
-      self.totalFiles = 0;
+      self.totalQueuedFiles = 0;
       self.showQueuedFiles = true;
-      self.files.splice(0);
+      self.queuedFiles.splice(0);
 
       for (let i = 0; i < length; i++) {
         let entry = event.dataTransfer.items[i].webkitGetAsEntry();
 
         if (entry.isFile) {
-          self.files.push({
+          self.queuedFiles.push({
             entry: entry,
+            kind: "file",
             label: entry.name,
             status: "pending"
           });
 
-          self.totalFiles++;
+          self.flattenQueuedFiles.push(
+            self.queuedFiles[self.queuedFiles.length - 1]
+          );
+
+          self.totalQueuedFiles++;
         } else if (entry.isDirectory) {
-          self.files.push({
-            label: entry.name,
+          self.queuedFiles.push({
             entry: entry,
+            kind: "directory",
+            label: entry.name,
             nodes: []
           });
 
-          self.readDirectory(entry, self.files[i]);
+          self.readDirectory(entry, self.queuedFiles[i]);
         }
       }
+
+      console.log("ENDFOR");
+
+      self.processQueue(self.queuedFiles);
     },
     readDirectory: function (directory_entry, files) {
       let self = this;
       let directoryReader = directory_entry.createReader();
 
       directoryReader.readEntries(function (results) {
-        if (results.length === 0) {
-          self.endReadDirectory();
-        }
+        // if (results.length === 0) {
+        //   self.endReadDirectory();
+        // }
 
         for (let index = 0; index < results.length; index++) {
           const entry = results[index];
@@ -180,6 +195,7 @@ export default {
 
           files.nodes.push({
             entry: entry,
+            kind: entry.isFile ? "file" : entry.isDirectory ? "directory" : "",
             label: entry.name,
             status: "pending"
           });
@@ -187,27 +203,54 @@ export default {
           if (entry.isDirectory) {
             self.readDirectory(entry, files["nodes"][files.nodes.length - 1]);
           } else {
-            self.totalFiles++;
+            self.flattenQueuedFiles.push(
+              files["nodes"][files.nodes.length - 1]
+            );
+
+            self.totalQueuedFiles++;
           }
         }
+
+        self.endReadDirectory();
       });
     },
     endReadDirectory: function () {
-      console.log(this.files);
+      let self = this;
+      // console.log(this.flattenQueuedFiles);
+      // if (!this.isSyncing) {
+      // }
+      this.processQueue(self.queuedFiles);
+    },
+    processQueue: function (files) {
+      let self = this;
+
+      for (let index = 0; index < files.length; index++) {
+        const file = files[index];
+
+        if (typeof file.nodes !== "undefined" && file.nodes.length > 0) {
+          self.processQueue(file.nodes);
+        } else {
+          if (file.status === "pending") {
+            file.status = "prepare-sync";
+            self.prepareUpload(file);
+          }
+        }
+      }
     },
     localFileUpload: function (entry) {
       let self = this;
 
-      self.files.splice(0);
-      self.totalFiles = 1;
+      self.totalQueuedFiles += 1;
       self.showQueuedFiles = true;
 
-      self.prepareUpload(entry.entry);
-
-      self.files.push({
+      self.queuedFiles.push({
+        entry: entry.entry,
+        kind: "file",
         label: entry.name,
-        entry: entry
+        status: "pending"
       });
+
+      self.prepareUpload(self.queuedFiles[self.queuedFiles.length - 1]);
     },
     changeFileBrowserPath: function (path) {
       this.fileBrowserPath = path;
@@ -217,26 +260,45 @@ export default {
     },
     prepareUpload: async function (file_handle) {
       let self = this;
+      let file = "";
 
-      let file = await file_handle.getFile();
+      if (typeof file_handle.entry.file !== "undefined") {
+        file = await self.getFileFromFileEntry(file_handle.entry);
+      } else if (typeof file_handle.entry.getFile !== "undefined") {
+        file = await file_handle.entry.getFile();
+      } else {
+        return;
+      }
+
       let contents = await file.text();
 
       let path = self.remoteFileBrowserPath.substr(1);
       let file_ext = file.name.split(".").pop();
 
       if (!allowedFileExtension.includes(file_ext)) {
-        alert("File extensions is not allowed!");
+        file_handle.status = "skip";
       } else {
-        self.upload(path + "/" + file.name, contents);
+        self.upload(path + "/" + file.name, contents, file_handle);
       }
     },
-    upload: function (path, contents) {
+    getFileFromFileEntry: async function (fileEntry) {
+      try {
+        return await new Promise((resolve, reject) =>
+          fileEntry.file(resolve, reject)
+        );
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    upload: function (path, contents, entry) {
       let self = this;
 
       const data = {
         path: path,
         marketplace_builder_file_body: contents
       };
+
+      entry.status = "syncing";
 
       fetch(self.url + "/api/app_builder/marketplace_releases/sync", {
         method: "PUT",
@@ -263,10 +325,12 @@ export default {
           return response.json();
         })
         .then((data) => {
-          console.log("Uploaded!");
+          entry.status = "synced";
           console.log(data);
         })
-        .catch(() => {});
+        .catch(() => {
+          entry.status = "error";
+        });
     }
   }
 };
