@@ -270,7 +270,17 @@ export default {
         return;
       }
 
-      let contents = await file.text();
+      // let reader = new FileReader();
+
+      // reader.onloadend = () => {
+      //   console.log(reader.result);
+      // };
+
+      // reader.readAsDataURL();
+
+      // let contents = await file.text();
+
+      // console.log("CONTENTS", contents);
 
       let path = self.remoteFileBrowserPath.substr(1);
       let file_ext = file.name.split(".").pop();
@@ -278,8 +288,23 @@ export default {
       if (!allowedFileExtension.includes(file_ext)) {
         file_handle.status = "skip";
       } else {
-        self.upload(path + "/" + file.name, contents, file_handle);
+        console.log(path);
+
+        // self.readFile(file, path + "/" + file.name, file_handle);
+        // self.upload(path + "/" + file.name, contents, file_handle);
+        self.upload(path + "/" + file.name, file, file_handle);
       }
+    },
+    readFile: function (file, path, file_handle) {
+      let self = this;
+      let reader = new FileReader();
+
+      reader.onloadend = () => {
+        // console.log("READER", reader.result);
+        self.upload(path, reader.result, file_handle);
+      };
+
+      reader.readAsBinaryString(file);
     },
     getFileFromFileEntry: async function (fileEntry) {
       try {
@@ -292,11 +317,15 @@ export default {
     },
     upload: function (path, contents, entry) {
       let self = this;
+      let form_data = new FormData();
 
-      const data = {
-        path: path,
-        marketplace_builder_file_body: contents
-      };
+      // const data = {
+      //   path: path,
+      //   marketplace_builder_file_body: contents
+      // };
+
+      form_data.append("path", path);
+      form_data.append("marketplace_builder_file_body", contents);
 
       entry.status = "syncing";
 
@@ -306,10 +335,11 @@ export default {
           Authorization: "Token " + self.token,
           InstanceDomain: self.url,
           "User-Agent": "pos-cli/4.5.18",
-          From: self.email,
-          "Content-Type": "application/json"
+          From: self.email
+          // "Content-Type": "application/json"
         },
-        body: JSON.stringify(data)
+        // body: JSON.stringify(data)
+        body: form_data
       })
         .then((response) => {
           if (response.status == 401) {
